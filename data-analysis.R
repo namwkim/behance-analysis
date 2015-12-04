@@ -18,6 +18,8 @@ if (!require(QuantPsyc)) {install.packages("QuantPsyc"); require(QuantPsyc)}
 if (!require(reshape2)) {install.packages("reshape2"); require(reshape2)} 
 if (!require(corrplot)) {install.packages("corrplot"); require(corrplot)} 
 if (!require(princomp)) {install.packages("princomp"); require(princomp)} 
+if (!require(jsonlite)) {install.packages("jsonlite"); require(jsonlite)} 
+
 #
 ##----- load data
 #
@@ -139,7 +141,42 @@ corrplot(cor(logFiltered), order="FPC")
 #
 ##----- specialization (which topic is the most popular one and by which gender)
 #
+#api call
+cfs<-fromJSON("https://api.behance.net/v2/fields?client_id=ancBdHFrtqhJM18AUzqev2wvgjM0PGnj")
+cfs$fields$abbr_name<-sapply( cfs$fields[2], function(x){
+  tolower(gsub(" ", "_", x))
+});
 
+# preprocess behance$fields: three fields are seperated by '|'.
+fields<-sapply(behance$fields, function(f){
+  if (nchar(as.character(f))!=0){
+    splited<-strsplit(as.character(f), "|", fixed = TRUE)
+    unlist(splited)
+  }
+})
+
+# topic vector
+with(behance, {
+  len<-length(fields)
+})
+a<-sapply(fields, function(f){
+  fields<-cfs$fields$abbr_name
+  vec<-rep(0, length(fields))
+  if (length(f)>0){
+    for (i in 1:length(f)){
+      field<-tolower(gsub(" ", "_", f[i]))
+      vec<- vec + as.integer(fields==field)  
+    }
+  }
+  as.list(vec)
+})
+
+with(behance, sapply(fields, function(f){
+  if (nchar(as.character(f))!=0){
+    splited<-strsplit(as.character(f), "|", fixed = TRUE)
+    
+  }
+}));
 
 #
 ##----- deeper analysis on gender
