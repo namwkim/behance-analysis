@@ -19,11 +19,12 @@ if (!require(reshape2)) {install.packages("reshape2"); require(reshape2)}
 if (!require(corrplot)) {install.packages("corrplot"); require(corrplot)} 
 if (!require(princomp)) {install.packages("princomp"); require(princomp)} 
 if (!require(jsonlite)) {install.packages("jsonlite"); require(jsonlite)} 
+if (!require(hash)) {install.packages("hash"); require(hash)} 
 
 #
 ##----- load data
 #
-behance = read.csv("/Users/namwkim85/Projects/behence-analysis/behance-users.csv")
+behance = read.csv("https://raw.githubusercontent.com/namwkim/behance-analysis/master/behance-users.csv")
 
 #
 ##----- signed-up dates (to confirm that I collected active users)
@@ -141,43 +142,61 @@ corrplot(cor(logFiltered), order="FPC")
 #
 ##----- specialization (which topic is the most popular one and by which gender)
 #
-#api call
+#api call to retrieve creative fields from behance
 cfs<-fromJSON("https://api.behance.net/v2/fields?client_id=ancBdHFrtqhJM18AUzqev2wvgjM0PGnj")
 cfs$fields$abbr_name<-sapply( cfs$fields[2], function(x){
   tolower(gsub(" ", "_", x))
 });
+systemFields<-as.vector(cfs$fields$abbr_name)
+# preprocess behance$fields: three fields for each user seperated by '|'
 
-# preprocess behance$fields: three fields are seperated by '|'.
-fields<-sapply(behance$fields, function(f){
-  if (nchar(as.character(f))!=0){
-    splited<-strsplit(as.character(f), "|", fixed = TRUE)
-    unlist(splited)
-  }
-})
-
-# topic vector
-with(behance, {
-  len<-length(fields)
-})
-a<-sapply(fields, function(f){
-  fields<-cfs$fields$abbr_name
-  vec<-rep(0, length(fields))
-  if (length(f)>0){
-    for (i in 1:length(f)){
-      field<-tolower(gsub(" ", "_", f[i]))
-      vec<- vec + as.integer(fields==field)  
+calcTopicRanks<-function(fields){
+  userFields<-hash() #keys=allFields, values=rep(0, length(allFields)))
+  # slow. loop over 50,000 entries
+  a<-sapply(fields, function(f){
+    if (nchar(as.character(f))!=0){
+      splited<-strsplit(as.character(f), "|", fixed = TRUE)
+      splited<-unlist(splited)
+      for (i in 1:length(splited)){
+        field<-tolower(gsub(" ", "_", splited[i]))
+        if (has.key(field, userFields)==FALSE){
+          userFields[[field]]<-0
+        }
+        userFields[[field]]<-userFields[[field]]+1
+      }
     }
-  }
-  as.list(vec)
-})
-
-with(behance, sapply(fields, function(f){
-  if (nchar(as.character(f))!=0){
-    splited<-strsplit(as.character(f), "|", fixed = TRUE)
-    
-  }
-}));
-
+  })
+  # sort by the number of users
+  userFields<-sort(values(userFields), decreasing=TRUE)
+  # return user fields
+  userFields
+}
+visualizeRanks<-function(fields, upto){
+  # visualize up to 30 ranks
+  ranks<-data.frame(fields=names(fields[1:upto]), counts=fields[1:upto])
+  # reorder factors to match colors and bars
+  ranks$fill<-factor(ranks$fields, levels = ranks$fields[order(ranks$counts, decreasing=TRUE)])
+  ranks$x<-as.character(1:length(ranks$fields))
+  ranks$x<-factor(ranks$x, levels = ranks$x[order(ranks$counts, decreasing=TRUE)])
+  ggplot(ranks, aes(x=x, y=counts, fill= fill)) + 
+    geom_bar(stat="identity") + 
+    guides(fill=guide_legend(ncol=2)) + 
+    labs(list(x="Fields", y="Users", fill = "Fields"))
+}
+# calc ranks
+userFields<-calcTopicRanks(behance$fields)
+maleFields<-calcTopicRanks(male$fields)
+femaleFields<-calcTopicRanks(female$fields)
+visualizeRanks(femaleFields, 30)
+visualizeRanks(maleFields, 30)
+# compare ranks
+length(systemFields)
+length(userFields)
+length(maleFields)
+length(femaleFields)
+#compare with system's popular fields
+cbind(names(head(userFields, n=12)),cfs$popular$name)
+cbind(names(head(maleFields, n=12)),names(head(femaleFields, n=12)))
 #
 ##----- deeper analysis on gender
 #
