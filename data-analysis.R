@@ -48,7 +48,12 @@ b
 c<-nrow(subset(behance, gender=="unknown" ))
 c
 a+b+c # should be 50,000
-a/b # male population is approximately 2.38 larger than female population
+a/b 
+# male population is approximately 2.38 larger than female population
+# quite surprising 
+#    1) need to look at each field
+#    2) compared to Pinterest whose the majority of population is female.
+
 
 #
 ##----- # of users by countries
@@ -129,7 +134,7 @@ plot_ly(df, x = x, y = y, color = cut)
 #
 ##----- correlatin between predictors
 #
-corrplot(cor(logFiltered), order="FPC")
+corrplot(cor(measures), order="FPC")
 # : observed groupings along project, collection, and wip
 
 # pca also revelas that each group of variables vary together 
@@ -187,20 +192,26 @@ visualizeRanks<-function(fields, upto){
 userFields<-calcTopicRanks(behance$fields)
 maleFields<-calcTopicRanks(male$fields)
 femaleFields<-calcTopicRanks(female$fields)
-visualizeRanks(femaleFields, 30)
-visualizeRanks(maleFields, 30)
-# compare ranks
+visualizeRanks(femaleFields, 20) 
+visualizeRanks(maleFields, 20) 
+
+# field diversities
 length(systemFields)
 length(userFields)
 length(maleFields)
 length(femaleFields)
+
 #compare with system's popular fields
 cbind(names(head(userFields, n=12)),cfs$popular$name)
+#compare between genders
 cbind(names(head(maleFields, n=12)),names(head(femaleFields, n=12)))
+# system's  popular fields seemed to be picked based on topics, not actual popularities.
+# web site & ux/ui do not appear in women's rankings- quite suprising.
+
 #
 ##----- deeper analysis on gender
 #
-# TODO: read reference papers
+#  
 dens <- with(behance, tapply(log(followers), INDEX = gender, density))
 df <- data.frame(
   x = unlist(lapply(dens, "[[", "x")),
@@ -209,16 +220,18 @@ df <- data.frame(
 )
 plot_ly(df, x = x, y = y, color = cut)
 
-dens <- with(behance, tapply(log(following), INDEX = gender, density))
+dens <- with(behance, tapply(log(project_appreciations), INDEX = gender, density))
 df <- data.frame(
   x = unlist(lapply(dens, "[[", "x")),
   y = unlist(lapply(dens, "[[", "y")),
   cut = rep(names(dens), each = length(dens[[1]]$x))
 )
 plot_ly(df, x = x, y = y, color = cut)
-with(behance, tapply(followers, gender, describe))
-with(behance, tapply(project_appreciations, gender, describe))
 
+with(behance, tapply(followers, gender, describe))
+
+with(behance, tapply(project_appreciations, gender, describe))
+# men seem to have more followers and more project appreciations.
 
 #
 ##----- explore relationships between predictors and dependent variables 
@@ -229,20 +242,57 @@ with(behance, tapply(project_appreciations, gender, describe))
 #
 
 
-# alternative: zero-inflated model, but in my case, those zero values are legitimate values to keep...
+#
+##----- prediction model : negative binomial regression
+#
 
-ggplot(behance, aes(following, followers)) + geom_point(shape=1) + geom_smooth(method=lm)
-ggplot(behance, aes(project_appreciations, followers)) + geom_point() + geom_smooth(method=lm)
+# prepare for regression model
 
+# 
+# alternative: zero-inflated model, 
+regdata<-subset(behance, gender=="female" | gender=="male")
+regdata$from_us <- regdata$country=="United States"
+regdata$from_br <- regdata$country=="Brazil"
+regdata$from_uk <- regdata$country=="United Kingdom"
+regdata$from_it <- regdata$country=="Italy"
+regdata$from_rs <- regdata$country=="Russian Federation"
 
-m1 <- glm.nb(followers ~  project_appreciations + gender, data = behance, maxit = 100, trace=TRUE)
-summary(m1)
-
-m2 <- update(m2, .~.-gender)
-summary(m2)
+m1 <- glm.nb(followers ~ 1, data = regdata, maxit = 100, trace=TRUE)
+m2 <- update(m1, .~.+project_appreciations)
 anova(m1, m2)
+m3 <- update(m2, .~.+project_comments)
+anova(m2, m3)
+m4 <- update(m3, .~.+project_views)
+anova(m3, m4)
+m5 <- update(m4, .~.+wip_comments)
+anova(m4, m5)
+# m6 <- update(m5, .~.+wip_views) # error
+# anova(m4, m5)
+# m6 <- update(m5, .~.+wip_revisions) #error
+# anova(m4, m5)
+# m6 <- update(m5, .~.+wip_counts) # doesn't converge
+# anova(m5, m6)
+m6 <- update(m5, .~.+project_counts)
+anova(m5, m6)
+m7 <- update(m6, .~.+following)
+anova(m6, m7)
+m8 <- update(m7, .~.+collection_followers) # this doesn't improve the model
+anova(m7, m8)
+m8 <- update(m7, .~.+collection_item_counts) # so as this
+anova(m7, m8)
+m8 <- update(m7, .~.+collection_counts) # so as this too
+anova(m7, m8)
+m8 <- update(m7, .~.+gender) 
+anova(m7, m8)
 
-m3 <- glm(followers ~ project_appreciations + gender, family = "poisson", data = behance)
-pchisq(2 * (logLik(m1) - logLik(m3)), df = 5, lower.tail = FALSE)
-(est <- cbind(Estimate = coef(m1), confint(m1)))
+
+summary(fitNegBin)
+
+# m2 <- update(m1, .~.-gender)
+# summary(m2)
+# anova(m1, m2)
+# 
+# m3 <- glm(followers ~ project_appreciations + gender, family = "poisson", data = behance)
+# pchisq(2 * (logLik(m1) - logLik(m3)), df = 5, lower.tail = FALSE)
+# (est <- cbind(Estimate = coef(m1), confint(m1)))
 
