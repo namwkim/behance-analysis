@@ -284,15 +284,16 @@ m8 <- update(m7, .~.+collection_counts) # so as this too
 anova(m7, m8)
 m8 <- update(m7, .~.+gender) 
 anova(m7, m8)
+m9 <- update(m8, .~.+from_us) 
+anova(m8, m9)
+m10 <- update(m9, .~.+from_br) 
+anova(m9, m10)
+m11 <- update(m10, .~.+from_uk) 
+anova(m10, m11)
+m12 <- update(m11, .~.+from_it) # this doesn't improve the model significantly
+anova(m11, m12)
+m12 <- update(m11, .~.+from_rs) 
+anova(m11, m12)
 
-
-summary(fitNegBin)
-
-# m2 <- update(m1, .~.-gender)
-# summary(m2)
-# anova(m1, m2)
-# 
-# m3 <- glm(followers ~ project_appreciations + gender, family = "poisson", data = behance)
-# pchisq(2 * (logLik(m1) - logLik(m3)), df = 5, lower.tail = FALSE)
-# (est <- cbind(Estimate = coef(m1), confint(m1)))
+summary(m12)
 
