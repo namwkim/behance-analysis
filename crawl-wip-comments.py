@@ -53,7 +53,7 @@ for wip in wips:
         print "====== Revision ID:", rev_id
         while True:
             try:
-                comments = u.get_revision_comments(revision_id=rev_id)
+                comments = w.get_revision_comments(revision_id=rev_id)
                 if len(comments)==0:
                     break;
 
@@ -61,17 +61,18 @@ for wip in wips:
                     # avoid duplicate
                     if visitedComments.has_key(comment["id"]):
                         continue
-                    visitedComments[["id"]] = comment
+                    visitedComments[comment["id"]] = comment
                     dbcomments.insert(json.loads(json.dumps(comment), object_hook=remove_dot_key))
                     numComments +=1
                 print "====== Revision ID, Comments = ", rev_id, ", ", numComments
+                break;
             except TooManyRequests as e:
                 print "Maximum Request Reached! Wating for Next Hour..."
                 time.sleep(60) # retry after 1 min
                 continue
             except BehanceException as e:
                 print "BehanceException: ", str(e)
-        numExceptions = numExceptions+1
+                numExceptions = numExceptions+1
                 break
 
 print "Total comments, Wips =  ", numComments, ", ", numWips

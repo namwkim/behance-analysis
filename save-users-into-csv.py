@@ -45,6 +45,7 @@ with open("behance-users.csv", 'wb') as csvfile:
 
     header = [
         "user_id",
+        "username"
         "first_name",
         "last_name",
         "created_on",
@@ -104,6 +105,7 @@ with open("behance-users.csv", 'wb') as csvfile:
             colls = []
         record = [
             user["user_id"],
+            user["username"],
             user["first_name"],
             user["last_name"],
             user["created_on"],

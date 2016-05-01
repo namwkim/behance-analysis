@@ -1,0 +1,16 @@
+<component name="libraryTable">
+  <library name="nam">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/javacpp.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/javacv.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/commons-lang-2.6.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/commons-math-2.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/guava-10.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/sikuli-core-1.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/piccolo.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/sikuli-design-1.0-SNAPSHOT.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

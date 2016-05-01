@@ -48,6 +48,7 @@ for project in projects:
             continue
         except BehanceException as e:
             print "BehanceException: ", str(e)
+            exceptions = exceptions+1
             break
 
 
