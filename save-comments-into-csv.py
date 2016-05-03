@@ -10,37 +10,42 @@ db_wip_cmts = db.sample_wip_comments
 
 # header
 header = [
-    "comment"
+"comment"
 ]
 
-# project comments 
+# # project comments 
 print 'saving project comments'
 with open("behance-project-comments.csv", 'wb') as csvfile:
     csvwriter = csv.writer(csvfile);
     csvwriter.writerow(header)
-    i = 0
+    cnt = 0
     for comment in db_prj_cmts.find():
         # print "processing", prj_cmt["id"], "(",i,")","..."
-        i=i+1
-        record = [
-            comment["comment"]
+        cnt+=1
+        record = [ 
+            comment["comment"].replace('\n', ' ').replace('\r', '').replace(',', ' ').strip()
         ]
-        record 	=[ s.encode('utf-8') if isinstance(s, unicode) else s for s in record]
+        record[0] = ''.join([i if ord(i) < 128 else '' for i in record[0]])
+        if record[0].replace(' ', '')=='':
+            continue
+        record  =[ s.encode('utf-8') for s in record]
         csvwriter.writerow(record)
-    print 'total project comments:', i
+    print 'total project comments:', cnt
 
 # project comments 
 print 'saving wip comments'
 with open("behance-wips-comments.csv", 'wb') as csvfile:
     csvwriter = csv.writer(csvfile);
     csvwriter.writerow(header)
-    i = 0
+    cnt = 0
     for comment in db_wip_cmts.find():
-        # print "processing", prj_cmt["id"], "(",i,")","..."
-        i=i+1
-        record = [
-            comment["comment"]
+        cnt+=1
+        record = [ 
+            comment["comment"].replace('\n', ' ').replace('\r', '').replace(',', ' ').strip()
         ]
-        record  =[ s.encode('utf-8') if isinstance(s, unicode) else s for s in record]
+        record[0] = ''.join([i if ord(i) < 128 else '' for i in record[0]])
+        if record[0].replace(' ', '')=='':
+            continue
+        record  =[ s.encode('utf-8') for s in record]
         csvwriter.writerow(record)
-    print 'total wip comments:', i
+    print 'total wip comments:', cnt
