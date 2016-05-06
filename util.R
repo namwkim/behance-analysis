@@ -1,3 +1,38 @@
+# Utility codes (some from the book 'doing bayesian data anlysis')
+calcTopicRanks<-function(fields){
+  userFields<-hash() 
+  a<-sapply(fields, function(f){
+    if (nchar(as.character(f))!=0){
+      # process users' fields concatenated by '|'
+      splited<-strsplit(as.character(f), "|", fixed = TRUE)
+      splited<-unlist(splited)
+      for (i in 1:length(splited)){
+        field<-tolower(gsub(" ", "_", splited[i]))
+        if (has.key(field, userFields)==FALSE){
+          userFields[[field]]<-0
+        }
+        userFields[[field]]<-userFields[[field]]+1
+      }
+    }
+  })
+  # sort by the number of users for topics
+  userFields<-sort(values(userFields), decreasing=TRUE)
+  # return user fields
+  userFields
+}
+# visualize the rankings (up to # rankings)
+visualizeRanks<-function(fields, upto){
+  ranks<-data.frame(fields=names(fields[1:upto]), counts=fields[1:upto])
+  # reorder factors to match colors and bars
+  ranks$fill<-factor(ranks$fields, levels = ranks$fields[order(ranks$counts, decreasing=TRUE)])
+  ranks$x<-as.character(1:length(ranks$fields))
+  ranks$x<-factor(ranks$x, levels = ranks$x[order(ranks$counts, decreasing=TRUE)])
+  ggplot(ranks, aes(x=x, y=counts, fill= fill)) + 
+    geom_bar(stat="identity") + 
+    guides(fill=guide_legend(ncol=2)) + 
+    labs(list(x="Fields", y="Users", fill = "Fields"))
+}
+
 HDIofMCMC = function( sampleVec , credMass=0.95 ) {
   # Computes highest density interval from a sample of representative values,
   #   estimated as shortest credible interval.
