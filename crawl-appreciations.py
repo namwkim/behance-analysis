@@ -16,25 +16,26 @@ def remove_dot_key(obj):
 # set API key
 key = raw_input('Input your Behance API key: ');
 behance = API(key)
+
 # db connection
 localClient = pymongo.MongoClient('localhost', 27017)
 db          = localClient.behance
 
-dbusers     = db.sample_users
-dbcollection  = db.sample_collections
-dbcollection.remove({}) # clear existing db collection
+dbusers     = db.users
+dbappreciations  = db.appreciations
+dbappreciations.remove({}) # clear existing db collection
 
-visitedCols = {}
+visitedProjects = {}
 
 users = []
 for user in dbusers.find():
     users.append(user)
 
 numUser = 0
-numCols = 0
+numAppreciations = 0
 for user in users:
     numUser = numUser + 1
-    print "Retrieving cols from user id: ", user["user_id"], " (", numUser, ")"
+    print "Retrieving appreciations from user id: ", user["user_id"], " (", numUser, ")"
     while True:
         try:
             u = User(user["user_id"], user["auth_key"])
@@ -50,19 +51,18 @@ for user in users:
     pageNum = 1
     while True:
         try:
-            cols = u.get_collections(page=pageNum)
-            if len(cols)==0:
-                break;
+            appreciations = u.get_appreciations(page=pageNum)
 
-            for col in cols:
-                # avoid duplicate
-                if visitedCols.has_key(col["id"]):
-                    continue
-                visitedCols[col["id"]] = col
-                dbcollection.insert(json.loads(json.dumps(col), object_hook=remove_dot_key))
-                numCols +=1
-            print "PageNum (Total cols) = ", pageNum, ", ", numCols
+            if len(appreciations)==0:
+                break
+            for appreciation in appreciations:
+                dbappreciations.insert({'user_id':user["user_id"], 'appreciated':json.loads(json.dumps(appreciation),object_hook=remove_dot_key)})
+            numAppreciations+=len(appreciations)
+
+            print "PageNum (Total Projects) = ", pageNum, ", ", numAppreciations
             pageNum +=1
+            if pageNum>5:
+                break
         except TooManyRequests as e:
             print "Maximum Request Reached! Wating for Next Hour..."
             time.sleep(60) # retry after 1 min
@@ -71,4 +71,4 @@ for user in users:
             print "BehanceException: ", str(e)
             break
 
-print "Total cols, Users =  ", numCols, ", ", numUser
+print "Total Projects, Users =  ", numAppreciations, ", ", numUser

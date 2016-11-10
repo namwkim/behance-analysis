@@ -21,8 +21,8 @@ behance = API(key)
 localClient = pymongo.MongoClient('localhost', 27017)
 db          = localClient.behance
 
-dbusers     = db.sample_users
-dbprojects  = db.sample_projects
+dbusers     = db.users
+dbprojects  = db.projects
 dbprojects.remove({}) # clear existing db collection
 
 visitedProjects = {}
@@ -53,7 +53,7 @@ for user in users:
         try:
             projects = u.get_projects(page=pageNum)
             if len(projects)==0:
-                break;
+                break
 
             for project in projects:
                 # avoid duplicate
@@ -64,6 +64,8 @@ for user in users:
                 numProj +=1
             print "PageNum (Total Projects) = ", pageNum, ", ", numProj
             pageNum +=1
+            if pageNum>=400:
+                break
         except TooManyRequests as e:
             print "Maximum Request Reached! Wating for Next Hour..."
             time.sleep(60) # retry after 1 min

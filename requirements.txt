@@ -1,2 +1,13 @@
 behance-python==0.2.4
+cycler==0.10.0
+decorator==4.0.10
+matplotlib==1.5.3
+networkx==1.11
+numpy==1.11.2
+plotly==1.12.9
 pymongo==3.1
+pyparsing==2.1.10
+python-dateutil==2.5.3
+pytz==2016.7
+requests==2.11.1
+six==1.10.0
