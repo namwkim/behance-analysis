@@ -56,7 +56,7 @@ for user in users:
             if len(appreciations)==0:
                 break
             for appreciation in appreciations:
-                dbappreciations.insert({'user_id':user["user_id"], 'appreciated':json.loads(json.dumps(appreciation),object_hook=remove_dot_key)})
+                dbappreciations.insert({'user_id':user["user_id"], 'project_id':appreciation['project']['id']})
             numAppreciations+=len(appreciations)
 
             print "PageNum (Total Projects) = ", pageNum, ", ", numAppreciations

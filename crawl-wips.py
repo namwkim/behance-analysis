@@ -21,8 +21,8 @@ behance = API(key)
 localClient = pymongo.MongoClient('localhost', 27017)
 db          = localClient.behance
 
-dbusers     = db.sample_users
-dbwips  = db.sample_wips
+dbusers     = db.users
+dbwips  = db.wips
 dbwips.remove({}) # clear existing db collection
 
 visitedWips = {}
@@ -64,6 +64,8 @@ for user in users:
                 numWips +=1
             print "PageNum (Total wips) = ", pageNum, ", ", numWips
             pageNum +=1
+            if pageNum>=400:
+                break
         except TooManyRequests as e:
             print "Maximum Request Reached! Wating for Next Hour..."
             time.sleep(60) # retry after 1 min

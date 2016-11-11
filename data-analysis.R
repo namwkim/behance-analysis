@@ -5,28 +5,29 @@
 ##------------------------------------------------------------
 
 # require packages
-if (!require(plyr)) {install.packages("plyr"); require(plyr)}           
-if (!require(psych)) {install.packages("psych"); require(psych)}           
-if (!require(graphics)) {install.packages("graphics"); require(graphics)}      
-if (!require(maps)) {install.packages("maps"); require(maps)}      
-if (!require(ggplot2)) {install.packages("ggplot2"); require(ggplot2)}      
-if (!require(plotly)) {install.packages("plotly"); require(plotly)}      
-if (!require(countrycode)) {install.packages("countrycode"); require(countrycode)}      
-if (!require(MASS)) {install.packages("MASS"); require(MASS)}      
-if (!require(pscl)) {install.packages("pscl"); require(pscl)}    
-if (!require(QuantPsyc)) {install.packages("QuantPsyc"); require(QuantPsyc)}    
-if (!require(reshape2)) {install.packages("reshape2"); require(reshape2)} 
-if (!require(corrplot)) {install.packages("corrplot"); require(corrplot)} 
-if (!require(princomp)) {install.packages("princomp"); require(princomp)} 
-if (!require(jsonlite)) {install.packages("jsonlite"); require(jsonlite)} 
-if (!require(hash)) {install.packages("hash"); require(hash)} 
-if (!require(relaimpo)) {install.packages("relaimpo"); require(relaimpo)}  
-if (!require(lmtest)) {install.packages("lmtest"); require(lmtest)}  
-if (!require(MASS)) {install.packages("MASS"); require(MASS)}  
+if (!require(plyr)) {install.packages("plyr"); require(plyr)}
+if (!require(psych)) {install.packages("psych"); require(psych)}
+if (!require(graphics)) {install.packages("graphics"); require(graphics)}
+if (!require(maps)) {install.packages("maps"); require(maps)}
+if (!require(ggplot2)) {install.packages("ggplot2"); require(ggplot2)}
+if (!require(plotly)) {install.packages("plotly"); require(plotly)}
+if (!require(countrycode)) {install.packages("countrycode"); require(countrycode)}
+if (!require(MASS)) {install.packages("MASS"); require(MASS)}
+if (!require(pscl)) {install.packages("pscl"); require(pscl)}
+if (!require(QuantPsyc)) {install.packages("QuantPsyc"); require(QuantPsyc)}
+if (!require(reshape2)) {install.packages("reshape2"); require(reshape2)}
+if (!require(corrplot)) {install.packages("corrplot"); require(corrplot)}
+if (!require(princomp)) {install.packages("princomp"); require(princomp)}
+if (!require(jsonlite)) {install.packages("jsonlite"); require(jsonlite)}
+if (!require(hash)) {install.packages("hash"); require(hash)}
+if (!require(relaimpo)) {install.packages("relaimpo"); require(relaimpo)}
+if (!require(lmtest)) {install.packages("lmtest"); require(lmtest)}
+if (!require(MASS)) {install.packages("MASS"); require(MASS)}
 #
 ##----- load data
 #
-behance = read.csv("https://raw.githubusercontent.com/namwkim/behance-analysis/master/behance-users.csv")
+# behance = read.csv("https://raw.githubusercontent.com/namwkim/behance-analysis/master/behance-users.csv")
+behance = read.csv('./sampled-graph/behance-users.csv')
 
 #
 ##----- distribution of signed-up dates
@@ -34,13 +35,13 @@ behance = read.csv("https://raw.githubusercontent.com/namwkim/behance-analysis/m
 # convert timestamp to readable format
 dates<-as.Date(as.POSIXct(behance$created_on, origin="1970-01-01"))
 dates<-data.frame(table(dates))
-plot_ly(dates, x=dates, y=Freq) %>% 
+plot_ly(dates, x=dates, y=Freq) %>%
   add_trace(y = fitted(loess(Freq ~ as.numeric(dates))))
 # : to confirm that I actually collected active users
 
 
 #
-##----- # of users by gender 
+##----- # of users by gender
 #
 allgender<-subset(behance, gender=="male"|gender=="female")
 male<-subset(behance, gender=="male" )
@@ -55,7 +56,7 @@ nrow(unknown)
 # It's surprising in that
 #    1) compared to Pinterest whose female population is significantly higher than male population
 #    2) creative fields such as graphic design are usually associated with women, I think.
-# *it's possible this is the problem of my sampling strategy. 
+# *it's possible this is the problem of my sampling strategy.
 
 #
 ##----- # of users by countries
@@ -68,11 +69,11 @@ topCountries<-function(d){
 totalP<-topCountries(behance)
 allGenderP<-topCountries(allgender)
 maleP<-topCountries(male)
-femaleP<-topCountries(female) 
-# After gender inferences, rankings change a bit. 
+femaleP<-topCountries(female)
+# After gender inferences, rankings change a bit.
 #   For instance, asian names' genders were not accurately inferred (rank 4 > 19)
 #   But, most rankings remain similar after the gender prediction.
-cbind(totalP[1:20, ], allGenderP[1:20, ]) 
+cbind(totalP[1:20, ], allGenderP[1:20, ])
 cbind(maleP[1:20, ], femaleP[1:20, ])  # top 5 remain the same across gender
 
 #
@@ -82,7 +83,7 @@ cbind(maleP[1:20, ], femaleP[1:20, ])  # top 5 remain the same across gender
 # convert country names to country codes
 totalP$country_code <-countrycode(totalP$country, "country.name", "iso3c")
 totalP<-na.omit(totalP) # remove missing data
-# draw map 
+# draw map
 l <- list(color = toRGB("grey"), width = 0.5)
 g <- list(
   showframe = FALSE,
@@ -133,7 +134,7 @@ drops<-c("following", "followers",
 
 plotDensity<-function(data){
   measures<-data[, (names(data) %in% drops)] # only numeric variables
-  
+
   logFiltered<- log(measures + 1) # HACK: to handle zero values
   melted<-melt(logFiltered) # long format
   colnames(melted)<-c("measure", "count")
@@ -144,9 +145,9 @@ plotDensity<-function(data){
     cut = rep(names(dens), each = length(dens[[1]]$x))
   )
   plot_ly(df, x = x, y = y, color = cut)
-  
+
 }
-# tip: unselect legends interactively to only see measures of interest 
+# tip: unselect legends interactively to only see measures of interest
 
 plotDensity(behance)
 plotDensity(allgender)
@@ -178,7 +179,7 @@ corrplot(cor(measures), order="FPC")
 
 # API call to retrieve pre-defined popular creative fields from behance
 cfs<-fromJSON("https://api.behance.net/v2/fields?client_id=ancBdHFrtqhJM18AUzqev2wvgjM0PGnj")
-# clean the fields 
+# clean the fields
 cfs$fields$abbr_name<-sapply( cfs$fields[2], function(x){
   tolower(gsub(" ", "_", x))
 });
@@ -186,7 +187,7 @@ systemFields<-as.vector(cfs$fields$abbr_name)
 
 # calculate topic rankings of users' fields
 calcTopicRanks<-function(fields){
-  userFields<-hash() 
+  userFields<-hash()
   a<-sapply(fields, function(f){
     if (nchar(as.character(f))!=0){
       # process users' fields concatenated by '|'
@@ -213,18 +214,18 @@ visualizeRanks<-function(fields, upto){
   ranks$fill<-factor(ranks$fields, levels = ranks$fields[order(ranks$counts, decreasing=TRUE)])
   ranks$x<-as.character(1:length(ranks$fields))
   ranks$x<-factor(ranks$x, levels = ranks$x[order(ranks$counts, decreasing=TRUE)])
-  ggplot(ranks, aes(x=x, y=counts, fill= fill)) + 
-    geom_bar(stat="identity") + 
-    guides(fill=guide_legend(ncol=2)) + 
+  ggplot(ranks, aes(x=x, y=counts, fill= fill)) +
+    geom_bar(stat="identity") +
+    guides(fill=guide_legend(ncol=2)) +
     labs(list(x="Fields", y="Users", fill = "Fields"))
 }
 # calc ranks (warning: slow)
 userFields<-calcTopicRanks(allgender$fields)
 maleFields<-calcTopicRanks(male$fields)
 femaleFields<-calcTopicRanks(female$fields)
-visualizeRanks(userFields, 20) 
-visualizeRanks(femaleFields, 20) 
-visualizeRanks(maleFields, 20) 
+visualizeRanks(userFields, 20)
+visualizeRanks(femaleFields, 20)
+visualizeRanks(maleFields, 20)
 
 # field diversities
 length(systemFields)
@@ -303,14 +304,14 @@ with(allgender, tapply(project_appreciations, gender, describe))
 # same as above, women has relatively lower median of project appreciations.
 # -> nothing interesting
 
-# take a deeper look at the difference in topical rankings 
+# take a deeper look at the difference in topical rankings
 allPhoto<-subset(allgender, allgender$has_digital_photography==1)
 allGraphic<-subset(allgender, allgender$has_graphic_design==1)
 describe(allGraphic$project_appreciations)
 describe(allPhoto$project_appreciations)
 describe(allGraphic$followers)
 describe(allPhoto$followers)
-# while graphic_design is the most popular, 
+# while graphic_design is the most popular,
 #  digital photography seems to have more followers and project appreciations
 
 allUS<-subset(allgender, allgender$from_united_states==1)
@@ -331,17 +332,17 @@ describe(allItaly$project_appreciations) # Italy is top among three (median)
 # IV. all other attributes
 # alternative: zero-inflated model, but zero values seem legitimate in my case, not generated by other processes
 
-# remove unused attributes 
+# remove unused attributes
 #  * I don't use wip-related attributes as they are too small (users don't use it much yet)
 regdata<-allgender[, c(5, 11:19, 24:48)]
 names(regdata)
 
-##fit a regression on all predictors 
+##fit a regression on all predictors
 fitnb <- glm.nb(followers ~ ., data = regdata, maxit = 100, trace=TRUE)
 summary(fitnb)
 
 # relative importance of predictors
-beta_std <- lm.beta(fitnb)        
+beta_std <- lm.beta(fitnb)
 rel_beta_std<-beta_std/sum(beta_std)
 sort(rel_beta_std, decreasing = TRUE)
 
@@ -351,7 +352,7 @@ fit<-update(fitnb, .~. -collection_counts-collection_item_counts -collection_fol
 anova(fitnb, fit)
 summary(fit)
 AIC(fit) # need more experiments to find the final best model.
-AIC(fitnb) 
+AIC(fitnb)
 
 # variable selection (error occurred)
 # fitnb_back <- stepAIC(fitnb, trace=FALSE)
@@ -365,12 +366,12 @@ AIC(fitnb)
 # DV. # of project appreciations
 # IV. all other attributes
 
-##fit a regression on all predictors 
+##fit a regression on all predictors
 fitnb_pa <- glm.nb(project_appreciations ~ ., data = regdata, maxit = 100, trace=TRUE)
 summary(fitnb_pa)
 
 # relative importance of predictors
-beta_std <- lm.beta(fitnb_pa)        
+beta_std <- lm.beta(fitnb_pa)
 sort(beta_std, decreasing = TRUE)
 
 # what if I remove non-significant metrics?
@@ -382,7 +383,7 @@ summary(fit_pa)
 AIC(fit_pa) # doesn't really improve the model
 AIC(fitnb_pa)
 
-# variable selection 
+# variable selection
 # : commented because it's too slow
 # : results ::  only collection_followers is removed from the full model
 
