@@ -1,4 +1,6 @@
-*.csv
+old-data
 images
-dump
 key.txt
+.RData
+.Rhistory
+.DS_Store

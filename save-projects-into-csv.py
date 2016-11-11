@@ -5,12 +5,11 @@ import urllib2
 localClient = pymongo.MongoClient('localhost', 27017)
 db          = localClient.behance
 
-dbprojects = db.sample_projects
-dbcomments = db.sample_project_comments
+dbprojects = db.projects
 
 
 # print filename
-with open("behance-projects.csv", 'wb') as csvfile:
+with open("./sampled-graph/behance-projects.csv", 'wb') as csvfile:
     projwriter = csv.writer(csvfile);
 
     header = [
@@ -53,7 +52,7 @@ with open("behance-projects.csv", 'wb') as csvfile:
             project["covers"]["original"],
             project["published_on"],
             project["created_on"], # estimated
-            "|".join(user["fields"]),
+            "|".join(project["fields"]),
             project["stats"]["views"],         # project views
             project["stats"]["appreciations"], # project appreciates
             project["stats"]["comments"], # project comments
