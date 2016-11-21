@@ -33,7 +33,7 @@ for coll in dbcollections.find():
 
 
 # print filename
-with open("./sampled-graph/behance-users.csv", 'wb') as csvfile:
+with open("./data/sampled-graph/behance-users.csv", 'wb') as csvfile:
     userwriter = csv.writer(csvfile);
 
     header = [
@@ -42,7 +42,8 @@ with open("./sampled-graph/behance-users.csv", 'wb') as csvfile:
         "first_name",
         "last_name",
         "created_on",
-        # "gender",
+        "url",
+        "gender",
         "city",
         "state",
         "country",
@@ -86,7 +87,8 @@ with open("./sampled-graph/behance-users.csv", 'wb') as csvfile:
             user["first_name"],
             user["last_name"],
             user["created_on"],
-            # user["gender"], # estimated
+            user["url"],
+            user["gender"], # estimated
             user["city"],
             user["state"],
             user["country"],
