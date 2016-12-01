@@ -22,15 +22,21 @@ behance = API(key)
 localClient = pymongo.MongoClient('localhost', 27017)
 db          = localClient.behance
 
-dbprojects  = db.sample_projects
-dbcomments  = db.sample_project_comments
+dbcomments  = db.project_comments
 dbcomments.remove({}) # clear existing db collection
+# visitedComments = dict(map(lambda x: (x['comment']['id'], x), list(dbcomments.find())))
 
-visitedComments = {}
-
+users = list(db.users.find({'gender':{'$ne':'unknown'}}))
+print 'Total users with gender:', len(users)
 projects = []
-for project in dbprojects.find():
-    projects.append(project)
+i = 0
+for user in users:
+    i+=1
+    print i
+    projects.extend(list(db.projects.find({'owners.id':user['id']})))
+
+print 'sort projects by id...'
+projects.sort(key=lambda x:x['id'])
 
 numComments = 0
 numProj = 0
@@ -51,19 +57,17 @@ for project in projects:
             exceptions = exceptions+1
             break
 
-
     while True:
         try:
             comments = p.get_comments()
             for comment in comments:
-                # avoid duplicate
-                if visitedComments.has_key(comment["id"]):
-                    continue
-                visitedComments[comment["id"]] = comment
-                dbcomments.insert(json.loads(json.dumps(comment), object_hook=remove_dot_key))
+                data = json.loads(json.dumps(comment), object_hook=remove_dot_key)
+                data['user'].pop('images', None)
+                data['project_id'] = project['id']
+                dbcomments.insert(data)
                 numComments +=1
-            print "Project ID , Total Comments = ", project["id"], ", ", numComments
-            break;
+            print "Project ID, Total Comments = ", project["id"], ", ", numComments
+            break
         except TooManyRequests as e:
             print "Maximum Request Reached! Wating for Next Hour..."
             time.sleep(60) # retry after 1 min
