@@ -6,3 +6,5 @@ key.txt
 .DS_Store
 data
 .nb.html
+*.csv
+*.pdf

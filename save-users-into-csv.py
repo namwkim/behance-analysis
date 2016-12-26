@@ -10,9 +10,7 @@ dbprojects      = db.projects
 dbcollections   = db.collections
 
 print 'collecting users'
-users       = []
-for user in dbusers.find():
-    users.append(user)
+users = list(db.users.find({'gender':{'$ne':'unknown'}}))
 
 print 'collecting projects'
 user_projs = {}
@@ -39,25 +37,25 @@ with open("./data/sampled-graph/behance-users.csv", 'wb') as csvfile:
     header = [
         "user_id",
         "username"
-        "first_name",
-        "last_name",
+        # "first_name",
+        # "last_name",
         "created_on",
-        "url",
+        # "url",
         "gender",
-        "city",
-        "state",
+        # "city",
+        # "state",
         "country",
-        "occupation",
+        # "occupation",
         "fields",
         "followers",
         "following",
         "project_counts",
         "project_views",
         "project_appreciations",
-        "project_comments",
-        "collection_counts",
-        "collection_item_counts",
-        "collection_followers"
+        "project_comments"#,
+        # "collection_counts",
+        # "collection_item_counts",
+        # "collection_followers"
     ]
     userwriter.writerow(header)
     for user in users:
@@ -84,25 +82,25 @@ with open("./data/sampled-graph/behance-users.csv", 'wb') as csvfile:
         record = [
             user["user_id"],
             user["username"],
-            user["first_name"],
-            user["last_name"],
+            # user["first_name"],
+            # user["last_name"],
             user["created_on"],
-            user["url"],
+            # user["url"],
             user["gender"], # estimated
-            user["city"],
-            user["state"],
+            # user["city"],
+            # user["state"],
             user["country"],
-            user["occupation"],
+            # user["occupation"],
             "|".join(user["fields"]),
             user["stats"]["followers"],
             user["stats"]["following"],
             len(projects),
             user["stats"]["views"],         # project views
             user["stats"]["appreciations"], # project appreciates
-            prject_comments,                # project comments
-            len(colls),
-            coll_items,
-            coll_followers
+            prject_comments#,                # project comments
+            # len(colls),
+            # coll_items,
+            # coll_followers
         ]
         record 	=[ s.encode('utf-8') if isinstance(s, unicode) else s for s in record]
         userwriter.writerow(record)

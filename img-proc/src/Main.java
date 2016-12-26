@@ -1,7 +1,3 @@
-package com.nam;
-
-
-
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
@@ -28,7 +24,7 @@ public class Main {
         File[] files = folder.listFiles();
 
         try {
-            FileWriter writer = new FileWriter("../project-props.csv");//project-props.csv");
+            FileWriter writer = new FileWriter("../project-color-props.csv");//project-props.csv");
             // headers for colors
             writer.append("filename,width,height,hue,saturation,value,");
             StandardColors colorNames = new StandardColors();
@@ -71,7 +67,7 @@ public class Main {
                     writer.append(avg.getVal(0) + "," + avg.getVal(1) + "," + avg.getVal(2) + ",");
                     //4. web colors
                     Map<NamedColor, Double> d = ColorAnalyzer.computeColorDistribution(input);
-                    for (NamedColor c : colorNames){
+                    for (NamedColor c : colorNames) {
                         writer.append(d.get(c) + ",");
                     }
                     //5. colorfulness
