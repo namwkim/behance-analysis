@@ -1,4 +1,11 @@
-*.csv
+old-data
 images
+key.txt
+.RData
+.Rhistory
 .DS_Store
+data
+.nb.html
+*.csv
 .pyc
+*.pdf

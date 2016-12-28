@@ -6,7 +6,7 @@ localClient = pymongo.MongoClient('localhost', 27017)
 db          = localClient.behance
 
 # fetch users
-dbusers     = db.sample_users
+dbusers     = db.users
 users = []
 for user in dbusers.find():
     if user.has_key('gender')==False:
@@ -27,7 +27,7 @@ def check_error(data):
 def update(user, gender, accuracy):
     print 'saving gender: ', user["username"], " - ", gender, "(", accuracy, ")"
     print ': ', user["url"]
-    db.sample_users.update_one(
+    db.users.update_one(
     { "id": user['id']}, {"$set":{ "gender": gender } })
 
 # set API key
