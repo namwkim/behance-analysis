@@ -1,7 +1,7 @@
 ---
-title: "Behance Exploratory Analysis"
+title: "Behance Analysis - Users"
 author: Nam Wook Kim
-date: Nov 18, 2016
+email: namwkim85@gmail.com
 output: 
   html_notebook
 ---
@@ -26,15 +26,12 @@ if (!require(jsonlite)) {install.packages("jsonlite"); library(jsonlite)}
 if (!require(hash)) {install.packages("hash"); library(hash)}
 if (!require(relaimpo)) {install.packages("relaimpo"); library(relaimpo)}
 if (!require(lmtest)) {install.packages("lmtest"); library(lmtest)}
-if (!require(MASS)) {install.packages("MASS"); library(MASS)}
 if (!require(proxy)) {install.packages("proxy"); library(proxy)}
 #
 ```
 **Load data**
 ```{r}
 users = read.csv('../data/sampled-graph/users-100.csv')
-designs = read.csv('../data/sampled-graph/designs-100.csv')
-links = read.csv('../data/sampled-graph/links-100.csv')
 ```
 **Plot the distribution of signed-up dates**
 
@@ -48,45 +45,46 @@ p <- ggplot(dates, aes(x=dates, y=Freq, group=1)) +
   labs(x='Dates', y='Frequency')
 
 p
+remove(dates)
+remove(p)
 ```
 
 **The number of users by gender**
 
 ```{r}
 allgender<-subset(users, gender=="male"|gender=="female")
-male<-subset(users, gender=="male" )
-female<-subset(users, gender=="female" )
-unknown<-subset(users, gender=="unknown" )
 nrow(allgender)
-nrow(male)
-nrow(female)
-nrow(unknown)
+nrow(subset(users, gender=="male" ))
+nrow(subset(users, gender=="female"))
+nrow(subset(users, gender=="unknown"))
 ```
 
-**The number of countries by by country**: After gender inferences, rankings change a bit. For instance, asian names' genders were not accurately inferred (rank 4 > 19). But, most rankings remain similar after the gender prediction.
+**The number of countries by by country**
 ```{r}
-topCountries<-function(d){
-  c<-count(d, "country")
+topCountries<-function(d){ # ranking countries
+  c<-count(d, "country") 
   c<-c[order(-c$freq),]
   c
 }
-totalP<-topCountries(users)
+# totalP<-topCountries(users)
 allGenderP<-topCountries(allgender)
-maleP<-topCountries(male)
-femaleP<-topCountries(female)
-c<-cbind(1:20, totalP[1:20, ], allGenderP[1:20, ])
-colnames(c) <- c('rank', 'country (all)', 'frequency (all)', 'country (male+female)', 'frequency (male+female)')
+maleP<-topCountries(subset(allgender, gender=="male" ))
+femaleP<-topCountries(subset(allgender, gender=="female" ))
+
+c<-cbind(1:20, allGenderP[1:20, ], maleP[1:20, ], femaleP[1:20, ])  # top 5 remain the same across gender
+colnames(c) <- c('rank', 'country (male+female)', 'frequency (male+female)', 'country (male)', 'frequency (male)', 'country (female)', 'frequency (female)')
 c
-c<-cbind(1:20, maleP[1:20, ], femaleP[1:20, ])  # top 5 remain the same across gender
-colnames(c) <- c('rank', 'country (male)', 'frequency (male)', 'country (female)', 'frequency (female)')
-c
+remove(c)
+remove(maleP)
+remove(femaleP)
+rm(topCountries)
 ```
 
 **World choropleth map of population**
 ```{r Code Chunk, fig.width = 10, fig.height = 10}
 # convert country names to country codes
-totalP$country_code <-countrycode(totalP$country, "country.name", "iso3c")
-totalP<-na.omit(totalP) # remove missing data
+allGenderP$country_code <-countrycode(allGenderP$country, "country.name", "iso3c")
+allGenderP<-na.omit(allGenderP) # remove missing data
 # draw map
 l <- list(color = toRGB("grey"), width = 0.5)
 g <- list(
@@ -94,17 +92,20 @@ g <- list(
   showcoastlines = FALSE,
   projection = list(type = 'Mercator')
 )
-plot_geo(totalP, width=700, height=450) %>%
+plot_geo(allGenderP, width=700, height=450) %>%
   add_trace(
     z = ~freq, text = ~country, locations = ~country_code,
     color = ~freq, colors = 'Reds'
   ) %>%
   layout(title = 'Population by Countries', geo = g)
+remove(g)
+remove(l)
+# remove(allGenderP)
 ```
 
  **u.s choropleth map (since it has the most population)**
 ```{r, eval=FALSE}
-# usdata<-users[users$country=="United States",]
+# usdata<-allgender[allgender$country=="United States",]
 # statecount<-count(usdata, 'state')
 # statecount$state_code<-state.abb[match(statecount$state, state.name)]
 # statecount<-na.omit(statecount)
@@ -120,21 +121,21 @@ plot_geo(totalP, width=700, height=450) %>%
 #     color = ~freq, colors = 'Reds'
 #   ) %>%
 #   layout(title = 'Population by Users', geo = g)
-  
-```
-**Summary statistics : gender and occupation**
-```{r}
-summary(allgender$gender)
-# summary(allgender$occupation)
+# remove(usdata)
 ```
 **Summary statistics : other  numeric variables**
 ```{r}
-drops<-c("following", "followers","comments",
+drops<-c("following", "followers",#"comments",
          "project_counts", "project_views", "project_appreciations", "project_comments",
          "collection_counts", "collection_item_counts", "collection_followers")
 measures<-users[, (names(users) %in% c(drops))] # only numeric variables
 summary(measures)
+
 ```
+```{r}
+describe(measures)
+```
+
 ** The percentage of zero values per each numeric variable.**
 ```{r}
 colSums(measures==0)/nrow(measures)*100
@@ -155,7 +156,7 @@ The follwoing are highly correlated groups:
 measures<-allgender[, (names(allgender) %in% drops)] # only numeric variables
 corrplot(cor(measures), order="FPC")
 ```
-### Specialization
+### User Specialization
 RQ. What topic is the most popular one and by which gender?
 ```{r}
 
@@ -202,9 +203,9 @@ visualizeRanks<-function(fields, upto){
     labs(list(x="Fields", y="Users", fill = "Fields"))
 }
 # calc ranks (warning: slow)
-userFields<-calcTopicRanks(allgender$fields)
-maleFields<-calcTopicRanks(male$fields)
-femaleFields<-calcTopicRanks(female$fields)
+userFields<-calcTopicRanks(users$fields)
+maleFields<-calcTopicRanks(subset(users, gender=='male')$fields)
+femaleFields<-calcTopicRanks(subset(users, gender=='female')$fields)
 
 ```
 **Topic rankings (total)**
@@ -281,26 +282,25 @@ allgender$gender<-factor(allgender$gender)
 **The distribution of followers by gender (log-transformed) **
 : female has a lower median and but also more mass in the tail of their follower distribution
 ```{r}
-dens <- with(allgender, tapply(log(followers+1), INDEX = gender, density))
-df <- data.frame(
-  x = unlist(lapply(dens, "[[", "x")),
-  y = unlist(lapply(dens, "[[", "y")),
-  cut = rep(names(dens), each = length(dens[[1]]$x))
-)
-plot_ly(df, x = ~x, y = ~y, color = ~cut)
+
 with(allgender, tapply(followers, gender, describe))
+# ggplot(allgender, aes(x=log(followers+1), colour=gender))+geom_density(adjust=1.5)
+ggplot(allgender, aes(x=log(followers+1), y=1 -..y.., colour=gender))+
+  stat_ecdf(size=1.5)
+x<-log(subset(allgender, gender=='male')$followers+1)
+y<-log(subset(allgender, gender=='female')$followers+1)
+ks.test(x,y)
 ```
 **The distribution of project appreciations by gender (log-transformed)**
 : same as above, women has relatively lower median of project appreciations.
 ```{r}
-dens <- with(allgender, tapply(log(project_appreciations+1), INDEX = gender, density))
-df <- data.frame(
-  x = unlist(lapply(dens, "[[", "x")),
-  y = unlist(lapply(dens, "[[", "y")),
-  cut = rep(names(dens), each = length(dens[[1]]$x))
-)
-plot_ly(df, x = ~x, y = ~y, color = ~cut)
 with(allgender, tapply(project_appreciations, gender, describe))
+# ggplot(allgender, aes(x=log(project_appreciations+1), colour=gender))+geom_density(adjust=1.5)
+ggplot(allgender, aes(x=log(project_appreciations+1), y=1 -..y.., colour=gender))+
+  stat_ecdf(size=1.5)
+x<-log(subset(allgender, gender=='male')$project_appreciations+1)
+y<-log(subset(allgender, gender=='female')$project_appreciations+1)
+ks.test(x,y)
 
 ```
 **Project appreciation & follower counts within topics**
@@ -339,7 +339,7 @@ describe(allItaly$followers)
 ```{r}
 # remove unused attributes (e.g., user id, user names etc)
 colnames(allgender)
-regdata<-allgender[, c(3:4,6,8:12, 14:38)]
+regdata<-allgender[, c(3:4,6,9:12, 14:38)]
 names(regdata)
 ```
 **Fit a regression on all predictors**
@@ -391,14 +391,14 @@ sort(beta_std, decreasing = TRUE)
 
 **What if I remove non-significant metrics?**
 ```{r}
-fit_pa<-update(fitnb_pa, .~. -from_united_states
-            -from_brazil-from_india-from_egypt-from_united_kingdom-collection_followers)
-anova(fitnb_pa, fit_pa)
+# fit_pa<-update(fitnb_pa, .~. -from_united_states
+#             -from_brazil-from_india-from_egypt-from_united_kingdom-collection_followers)
+# anova(fitnb_pa, fit_pa)
 ```
 ```{r}
-summary(fit_pa)
-AIC(fit_pa) 
-AIC(fitnb_pa)
+# summary(fit_pa)
+# AIC(fit_pa) 
+# AIC(fitnb_pa)
 ```
 ```{r}
 # variable selection
@@ -414,87 +414,3 @@ AIC(fitnb_pa)
 # excluded <- !fullvar %in% modvar   ## compare strings
 # fullvar[excluded]
 ```
-Which topics are most popular in terms of the number of designs users create per each topic?
-
-```{r}
-
-# visualize the rankings (up to # rankings)
-visualizeRanksProjects<-function(fields, upto){
-
-}
-
-allTopics<-calcTopicRanks(designs$fields)
-length(allTopics)
-fields<- allTopics / sqrt(sum(allTopics^2))
-upto<-30
-ranks<-data.frame(fields=names(fields[1:upto]), counts=fields[1:upto])
-# reorder factors to match colors and bars
-ranks$fill<-factor(ranks$fields, levels = ranks$fields[order(ranks$counts, decreasing=TRUE)])
-ranks$x<-as.character(1:length(ranks$fields))
-ranks$x<-factor(ranks$x, levels = ranks$x[order(ranks$counts, decreasing=TRUE)])
-g<-ggplot(ranks, aes(x=x, y=counts, fill= fill)) +
-  geom_bar(stat="identity") +
-  guides(fill=guide_legend(ncol=3)) +
-  labs(list(x="Fields", y="Normalized count", fill = "Fields"))
-
-g
-ggsave('topics.pdf', width=12, height=3.5)
-```
-How topics are related?
-```{r}
-# initialize topic vectors
-topics<-names(allTopics)[1:20]
-topicVecs<-vector('list', length(topics))
-vecSize<-nrow(designs)
-for (topicName in topics){
-  print(topicName)
-  idx<-which(topics==topicName)
-  topicVecs[[idx]]<-vector(length = vecSize)
-}
-
-for (i in 1:vecSize){
-  # print(i)
-  f<-designs[i,]$fields
-  if (nchar(as.character(f))!=0){
-      splited<-strsplit(as.character(f), "|", fixed = TRUE)
-      splited<-unlist(splited)
-      for (j in 1:length(splited)){
-        field<-tolower(gsub(" ", "_", splited[j]))
-        # print(field)
-        locVec<-topics==field
-        if (any(locVec)){
-          idx<-which(locVec)
-          # print(idx)
-          topicVecs[[idx]][i]<-TRUE  
-        }
-        
-      }
-  }
-}
-
-
-simVals<-hash()
-for (i in 1:length(topics)){
-  for (j in i:length(topics)){
-    topicName1<-topics[i]
-    topicName2<-topics[j]
-    idx1<-which(topics==topicName1)
-    idx2<-which(topics==topicName2)
-    if (topicName1!=topicName2){
-      key<-paste0(topicName1,' vs ',topicName2)
-      print(key)
-      
-      dist(topicVecs[[idx1]],topicVecs[[idx2]], method = "Jaccard", pairwise = TRUE)
-      
-      excluded <-Reduce('&', rbind(topicVecs[idx1], topicVecs[idx2]))
-      combined <-Reduce('|', rbind(topicVecs[idx1], topicVecs[idx2]))
-      simVal<-length(excluded[excluded==TRUE])/length(combined[combined==TRUE])
-      print(simVal)
-      simVals[[key]]<-simVal
-    }
-  }
-}
-simVals<-sort(values(simVals), decreasing=TRUE)
-
-```
-
