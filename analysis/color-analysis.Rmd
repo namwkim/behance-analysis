@@ -1,0 +1,214 @@
+---
+title: "Behance Exploratory Analysis - Colors"
+author: Nam Wook Kim
+email: namwkim85@gmail.com
+output: 
+  html_notebook
+---
+**Install dependent libraries**
+
+```{r, message=FALSE, warning=FALSE}
+# require packages
+
+if (!require(ggplot2)) {install.packages("ggplot2"); library(ggplot2)}
+if (!require(jsonlite)) {install.packages("jsonlite"); library(jsonlite)}
+if (!require(data.table)) {install.packages("data.table"); library(data.table)}
+if (!require(poweRlaw)) {install.packages("poweRlaw"); library(poweRlaw)}
+if (!require(proxy)) {install.packages("proxy"); library(proxy)}
+if (!require(ggdendro)) {install.packages("ggdendro"); library(ggdendro)}
+if (!require(entropy)) {install.packages("entropy"); library(entropy)}
+if (!require(effsize)) {install.packages("effsize"); library(effsize)}
+if (!require(dplyr)) {install.packages("dplyr"); library(dplyr)}
+if (!require(graphics)) {install.packages("graphics"); library(graphics)}
+if (!require(corrplot)) {install.packages("corrplot"); library(corrplot)}
+if (!require(MASS)) {install.packages("MASS"); library(MASS)}
+if (!require(QuantPsyc)) {install.packages("QuantPsyc"); library(QuantPsyc)}
+if (!require(miscTools)) {install.packages("miscTools"); library(miscTools)}
+if (!require(imager)) {install.packages("imager"); library(imager)}
+
+
+# if (!require(psych)) {install.packages("psych"); library(psych)}
+
+# if (!require(maps)) {install.packages("maps"); library(maps)}
+# if (!require(countrycode)) {install.packages("countrycode"); library(countrycode)}
+# if (!require(MASS)) {install.packages("MASS"); library(MASS)}
+# if (!require(pscl)) {install.packages("pscl"); library(pscl)}
+
+if (!require(reshape2)) {install.packages("reshape2"); library(reshape2)}
+# if (!require(hash)) {install.packages("hash"); library(hash)}
+# if (!require(proxy)) {install.packages("proxy"); library(proxy)}
+
+```
+**Load data**
+```{r}
+# users = fread('../data/users-100.csv')
+projects <- na.omit(fread('../data/projects-colors-100.csv', showProgress = TRUE, fill=TRUE, sep=','))
+# links = fread('../data/links-100.csv')
+```
+*Check colorfulness2*
+A sum of the average saturation value and its standard deviation across an imag
+```{r}
+projects<-arrange(projects, colorfulness2)
+
+# least colorful
+tfile<-tempfile()
+download.file(head(projects, n=1)$url, tfile ,mode='wb')
+plot(im<-load.image(tfile))
+
+tail(projects, n=1)
+
+# most colorful
+tfile<-tempfile()
+download.file(tail(projects, n=1)$url, tfile ,mode='wb')
+plot(im<-load.image(tfile))
+
+c(tail(projects, n=1)$colorfulness2, head(projects, n=1)$colorfulness2)
+
+head(projects, n=1)
+
+file.remove(tfile)
+```
+
+*Check colorfulness1*
+Measured using the color difference against grey
+```{r}
+projects<-arrange(projects, colorfulness1)
+
+# least colorful
+tfile<-tempfile()
+download.file(head(projects, n=1)$url, tfile ,mode='wb')
+plot(im<-load.image(tfile))
+
+tail(projects, n=1)
+
+# most colorful
+tfile<-tempfile()
+download.file(tail(projects, n=1)$url, tfile ,mode='wb')
+plot(im<-load.image(tfile))
+
+head(projects, n=1)
+
+file.remove(tfile)
+
+```
+*Correlation of measures*
+```{r}
+measures<-subset(projects, select=c(!names(projects)%in%c('design_id', 'fields', 'url')) )
+corrplot(cor(measures), order="FPC")
+```
+*Plot color distribution*
+```{r}
+
+# 16 web colors 
+colors<-subset(measures, select=c(!names(measures)%in%c('hue', 'saturation', 'value','appreciations', 'followers', 'colorfulness1', 'colorfulness2')) )
+summary(colors)
+
+cbPalette <- c("#000000", "#C0C0C0", "#808080", "#FFFFFF", "#800000", "#FF0000", "#800080", "#FF00FF",
+               "#008000", "#00FF00", "#808000", "#FFFF00", "#000080", "#0000FF", "#008080", "#00FFFF")
+
+melted_colors<-melt(colors)
+melted_colors$x<-rep(1:ncol(colors), each=nrow(colors))
+melted_colors$x<-factor(melted_colors$x)
+
+ggplot(melted_colors, aes(x=x, fill=variable, y=value)) +
+  geom_boxplot(aes(fill=variable)) +
+  labs(list(x="", y="Log(Percentage)", fill = "Colors"))+
+  scale_fill_manual(values=cbPalette) +
+  scale_y_log10()
+
+# hsv 
+hsv<-subset(measures, select=c(names(measures)%in%c('hue', 'saturation', 'value')) )
+
+summary(hsv)
+
+ggplot(melt(hsv), aes(x=variable, y=value)) +
+  geom_boxplot(aes(fill=variable)) +
+  ylim(0, 255) +
+  xlab('H: [0,179], S [0,255], V: [0,255]')+
+  ylab('')
+#OpenCV: 
+
+```
+*Plot color distribution by fields*
+```{r}
+cfs<-fromJSON("https://api.behance.net/v2/fields?client_id=ancBdHFrtqhJM18AUzqev2wvgjM0PGnj")
+# clean the fields
+cfs$fields$abbr_name<-sapply( cfs$fields[2], function(x){
+  tolower(gsub(" ", "_", x))
+});
+systemFields<-as.vector(cfs$fields$abbr_name)
+rm(cfs)
+
+# group by fields
+projects$fields<-tolower(gsub(" ", "_", projects$fields))
+proj_by_field<-lapply(systemFields, function(f){
+  projects[grep(f, projects$fields),]
+})
+
+names(proj_by_field)<-systemFields
+
+temp<-sapply(systemFields, function(f){
+  if (nrow(proj_by_field[[f]])==0){
+    rep(0,16)
+  }else{
+    measures<-subset(proj_by_field[[f]], select=c(!names(proj_by_field[[f]])%in%c('design_id', 'fields', 'url','hue', 'saturation', 'value','appreciations', 'followers', 'colorfulness1', 'colorfulness2')) )
+  # format(colMeans(measures), nsmall=6, scientific=FALSE)  
+    colMedians(measures)
+  }
+
+})
+# distribution per topic roughly looks same
+format(temp, nsmall=6, scientific=FALSE)  
+
+# compare each distribution of colors per topic with that of the all data
+total_dist<-colMedians(colors)/sum(colMedians(colors))
+rbind(temp[,1]/sum(temp[,1]),colMedians(colors)/sum(colMedians(colors)))
+
+# a<-ks.test(temp[,1]/sum(temp[,1]),total_dist)
+# a$p.value
+sapply(1:ncol(temp), function(idx){
+  ks.test(temp[,idx], total_dist)$p.value
+})<0.001
+
+# compare mean entroy with a random entropy
+# a<-sapply(1:ncol(temp), function(idx){
+#   entropy(temp[,idx])   
+# })%>%na.omit
+# 
+# b<-runif(length(a))*log(16)
+# t.test(a,b,paired = TRUE)
+
+# plot all color distributions
+ggplot(melt(temp), aes(x=Var1, y=value, group=Var2, colour=Var2))+
+  geom_line() +
+  theme(legend.position="none") +
+  theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+```
+
+*Regression model*
+```{r}
+regdata<-subset(measures, select=c(!names(measures)%in%c('hue')) )
+
+temp<-regdata[sample(1:nrow(regdata), 300000),]
+
+fitnb <- glm.nb(appreciations ~ ., data = regdata, maxit = 100, trace=TRUE)
+summary(fitnb)
+pchisq(fitnb$deviance, df=fitnb$df.residual, lower.tail=FALSE)
+
+```
+```{r}
+beta_std <- lm.beta(fitnb)
+sort(beta_std, decreasing = TRUE)
+
+```
+```{r}
+fit<-update(fitnb, .~. -saturation-value-black-silver-gray-white-maroon-red-purple-fuchsia-
+              green-lime-olive-yellow-navy-blue-teal-aqua-colorfulness1-colorfulness2)
+anova(fitnb, fit, test="Chisq")
+summary(fit)
+ # need more experiments to find the final best model.
+AIC(fit)-AIC(fitnb)
+
+```
+
