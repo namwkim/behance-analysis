@@ -24,14 +24,14 @@ if (!require(reshape2)) {install.packages("reshape2"); library(reshape2)}
 if (!require(corrplot)) {install.packages("corrplot"); library(corrplot)}
 if (!require(jsonlite)) {install.packages("jsonlite"); library(jsonlite)}
 if (!require(hash)) {install.packages("hash"); library(hash)}
-if (!require(relaimpo)) {install.packages("relaimpo"); library(relaimpo)}
+if (!require(relimp)) {install.packages("relimp"); library(relimp)}
 if (!require(lmtest)) {install.packages("lmtest"); library(lmtest)}
 if (!require(proxy)) {install.packages("proxy"); library(proxy)}
 #
 ```
 **Load data**
 ```{r}
-users = read.csv('../data/sampled-graph/users-100.csv')
+users = read.csv('../data/users-100.csv')
 ```
 **Plot the distribution of signed-up dates**
 
@@ -277,32 +277,62 @@ count(allgender$from_united_states) #sanity check
 Fix gender factor level (remove unknown fator)
 
 ```{r}
-allgender$gender<-factor(allgender$gender)
+# allgender$gender<-factor(allgender$gender)
 ```
-**The distribution of followers by gender (log-transformed) **
-: female has a lower median and but also more mass in the tail of their follower distribution
-```{r}
+**The distribution of project appreciations and followers by gender (log-transformed)**
+```{r, fig.height=3.5, fig.width=8}
 
-with(allgender, tapply(followers, gender, describe))
-# ggplot(allgender, aes(x=log(followers+1), colour=gender))+geom_density(adjust=1.5)
-ggplot(allgender, aes(x=log(followers+1), y=1 -..y.., colour=gender))+
-  stat_ecdf(size=1.5)
-x<-log(subset(allgender, gender=='male')$followers+1)
-y<-log(subset(allgender, gender=='female')$followers+1)
-ks.test(x,y)
-```
-**The distribution of project appreciations by gender (log-transformed)**
-: same as above, women has relatively lower median of project appreciations.
-```{r}
 with(allgender, tapply(project_appreciations, gender, describe))
-# ggplot(allgender, aes(x=log(project_appreciations+1), colour=gender))+geom_density(adjust=1.5)
-ggplot(allgender, aes(x=log(project_appreciations+1), y=1 -..y.., colour=gender))+
-  stat_ecdf(size=1.5)
+
 x<-log(subset(allgender, gender=='male')$project_appreciations+1)
 y<-log(subset(allgender, gender=='female')$project_appreciations+1)
 ks.test(x,y)
 
+combined<-rbind(cbind(allgender$project_views, allgender$gender, 1),
+                cbind(allgender$project_comments, allgender$gender, 2),
+                cbind(allgender$project_counts, allgender$gender, 3))
+combined<-as.data.frame(combined)
+colnames(combined)<-c('value', 'gender', 'group')
+combined$gender<-factor(combined$gender, labels=c('female', 'male'))
+combined$group<-factor(combined$group, labels=c('# Views', '# Comment', '# Count'))
+
+ggplot(combined, aes(x=log(value+1), y=1 -..y.., colour=gender))+
+  stat_ecdf(size=1.5) +
+  facet_grid(. ~ group)+
+  ylab('P(X>x)') + 
+  theme(legend.position='top', axis.title.x = element_blank())
+
+ggsave('ccdf_1.pdf', width=8, height=3.5) # for publication
 ```
+```{r, fig.height=3.5, fig.width=8}
+with(allgender, tapply(followers, gender, describe))
+x<-log(subset(allgender, gender=='male')$followers+1)
+y<-log(subset(allgender, gender=='female')$followers+1)
+ks.test(x,y)
+
+combined<-rbind(cbind(allgender$followers, allgender$gender, 1),
+                cbind(allgender$following, allgender$gender, 2),
+                cbind(allgender$project_appreciations, allgender$gender, 3))
+combined<-as.data.frame(combined)
+colnames(combined)<-c('value', 'gender', 'group')
+combined$gender<-factor(combined$gender, labels=c('female', 'male'))
+combined$group<-factor(combined$group, labels=c('# Follower', '# Following', '# Appreciation'))
+
+ggplot(combined, aes(x=log(value+1), y=1 -..y.., colour=gender))+
+  stat_ecdf(size=1.5) +
+  facet_grid(. ~ group)+
+  ylab('P(X>x)') + 
+  theme(legend.position='top', axis.title.x = element_blank(),
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12),
+        strip.text.x = element_text(size=14, face='bold'),
+        axis.title.y = element_text(size=12, face='bold'),
+        legend.title = element_text(size=12, face='bold'),
+        legend.text = element_text(size=12, face='bold'))
+
+ggsave('ccdf_2.pdf', width=8, height=3.5) # for publication
+```
+
 **Project appreciation & follower counts within topics**
 : while graphic_design is the most popular, digital photography seems to have more followers and project appreciations
 ```{r}
@@ -346,13 +376,13 @@ names(regdata)
 ```{r}
 fitnb <- glm.nb(followers ~ ., data = regdata, maxit = 100, trace=TRUE)
 summary(fitnb)
+1-pchisq(fitnb$null.deviance - fitnb$deviance, df=(fitnb$df.null - fitnb$df.residual))
 ```
 **Relative importance of predictors**
 ```{r}
 beta_std <- lm.beta(fitnb)
 rel_beta_std<-beta_std/sum(beta_std)
-sort(rel_beta_std, decreasing = TRUE)
-
+rel_beta_std[order(abs(rel_beta_std),decreasing = TRUE)]
 ```
 ** Can I improve the model by removing less important variables**
 ```{r}
@@ -379,13 +409,14 @@ sort(rel_beta_std, decreasing = TRUE)
 
 fitnb_pa <- glm.nb(project_appreciations ~ ., data = regdata, maxit = 100, trace=TRUE)
 summary(fitnb_pa)
+# pchisq(fitnb_pa$deviance, df=fitnb_pa$df.residual, lower.tail=FALSE)
+1-pchisq(fitnb_pa$null.deviance - fitnb_pa$deviance, df=(fitnb_pa$df.null - fitnb_pa$df.residual))
 ```
 **Relative importance of predictors**
 ```{r}
 beta_std <- lm.beta(fitnb_pa)
-sort(beta_std, decreasing = TRUE)
-
-
+rel_beta_std<-beta_std/sum(beta_std)
+rel_beta_std[order(abs(rel_beta_std),decreasing = TRUE)]
 
 ```
 

@@ -210,20 +210,16 @@ if (!require(reshape2)) {install.packages(&quot;reshape2&quot;); library(reshape
 <p><strong>Load data</strong></p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyB1c2VycyA9IGZyZWFkKCcuLi9kYXRhL3VzZXJzLTEwMC5jc3YnKVxucHJvamVjdHMgPC0gbmEub21pdChmcmVhZCgnLi4vZGF0YS9wcm9qZWN0cy1jb2xvcnMtMTAwLmNzdicsIHNob3dQcm9ncmVzcyA9IFRSVUUsIGZpbGw9VFJVRSwgc2VwPScsJykpXG5gYGAifQ== -->
-<pre class="r"><code># users = fread('../data/users-100.csv')
-projects &lt;- na.omit(fread('../data/projects-colors-100.csv', showProgress = TRUE, fill=TRUE, sep=','))</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucHJvamVjdHMgPC0gbmEub21pdChmcmVhZCgnLi4vZGF0YS9wcm9qZWN0cy1jb2xvcnMtMTAwLmNzdicsIHNob3dQcm9ncmVzcyA9IFRSVUUsIGZpbGw9VFJVRSwgc2VwPScsJykpXG5cbmBgYCJ9 -->
+<pre class="r"><code>projects &lt;- na.omit(fread('../data/projects-colors-100.csv', showProgress = TRUE, fill=TRUE, sep=','))
+</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5SZWFkIDMxLjMlIG9mIDU0MjM0NiByb3dzXG5SZWFkIDU3LjIlIG9mIDU0MjM0NiByb3dzXG5SZWFkIDg0LjglIG9mIDU0MjM0NiByb3dzXG5SZWFkIDU0MjM0NSByb3dzIGFuZCAyNiAob2YgMjYpIGNvbHVtbnMgZnJvbSAwLjIwMCBHQiBmaWxlIGluIDAwOjAwOjA2XG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5SZWFkIDQ2LjElIG9mIDU0MjM0NiByb3dzXG5SZWFkIDc1LjYlIG9mIDU0MjM0NiByb3dzXG5SZWFkIDU0MjM0NSByb3dzIGFuZCAyNiAob2YgMjYpIGNvbHVtbnMgZnJvbSAwLjIwMCBHQiBmaWxlIGluIDAwOjAwOjA0XG4ifQ== -->
 <pre><code>
-Read 31.3% of 542346 rows
-Read 57.2% of 542346 rows
-Read 84.8% of 542346 rows
-Read 542345 rows and 26 (of 26) columns from 0.200 GB file in 00:00:06</code></pre>
+Read 46.1% of 542346 rows
+Read 75.6% of 542346 rows
+Read 542345 rows and 26 (of 26) columns from 0.200 GB file in 00:00:04</code></pre>
 <!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBsaW5rcyA9IGZyZWFkKCcuLi9kYXRhL2xpbmtzLTEwMC5jc3YnKVxuYGBgIn0= -->
-<pre class="r"><code># links = fread('../data/links-100.csv')</code></pre>
-<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p><em>Check colorfulness2</em> A sum of the average saturation value and its standard deviation across an imag</p>
