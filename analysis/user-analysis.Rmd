@@ -300,7 +300,13 @@ ggplot(combined, aes(x=log(value+1), y=1 -..y.., colour=gender))+
   stat_ecdf(size=1.5) +
   facet_grid(. ~ group)+
   ylab('P(X>x)') + 
-  theme(legend.position='top', axis.title.x = element_blank())
+  theme(legend.position='top', axis.title.x = element_blank(),
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size=12),
+        strip.text.x = element_text(size=14, face='bold'),
+        axis.title.y = element_text(size=12, face='bold'),
+        legend.title = element_text(size=12, face='bold'),
+        legend.text = element_text(size=12, face='bold'))
 
 ggsave('ccdf_1.pdf', width=8, height=3.5) # for publication
 ```

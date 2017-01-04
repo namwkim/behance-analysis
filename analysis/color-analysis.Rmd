@@ -97,11 +97,11 @@ measures<-subset(projects, select=c(!names(projects)%in%c('design_id', 'fields',
 corrplot(cor(measures), order="FPC")
 ```
 *Plot color distribution*
-```{r}
+```{r, fig.height=4, fig.width=6}
 
 # 16 web colors 
 colors<-subset(measures, select=c(!names(measures)%in%c('hue', 'saturation', 'value','appreciations', 'followers', 'colorfulness1', 'colorfulness2')) )
-summary(colors)
+
 
 cbPalette <- c("#000000", "#C0C0C0", "#808080", "#FFFFFF", "#800000", "#FF0000", "#800080", "#FF00FF",
                "#008000", "#00FF00", "#808000", "#FFFF00", "#000080", "#0000FF", "#008080", "#00FFFF")
@@ -109,23 +109,29 @@ cbPalette <- c("#000000", "#C0C0C0", "#808080", "#FFFFFF", "#800000", "#FF0000",
 melted_colors<-melt(colors)
 melted_colors$x<-rep(1:ncol(colors), each=nrow(colors))
 melted_colors$x<-factor(melted_colors$x)
-
-ggplot(melted_colors, aes(x=x, fill=variable, y=value)) +
-  geom_boxplot(aes(fill=variable)) +
+# melted_colors$value<-logit(melted_colors$value)
+ggplot(melted_colors, aes(x=x, fill=variable, y=log(value+1))) +
+  geom_boxplot(aes(fill=variable), outlier.size = 0.5) +
   labs(list(x="", y="Log(Percentage)", fill = "Colors"))+
   scale_fill_manual(values=cbPalette) +
-  scale_y_log10()
+  guides(fill=guide_legend(ncol=8)) +
+  theme(legend.position = "top", 
+        legend.title = element_blank(),
+        legend.text=element_text(size=10))
 
+describe(log(colors+1))
+
+ggsave('colors.pdf', width=6, height=4) # for publication
 # hsv 
 hsv<-subset(measures, select=c(names(measures)%in%c('hue', 'saturation', 'value')) )
 
 summary(hsv)
-
-ggplot(melt(hsv), aes(x=variable, y=value)) +
-  geom_boxplot(aes(fill=variable)) +
-  ylim(0, 255) +
-  xlab('H: [0,179], S [0,255], V: [0,255]')+
-  ylab('')
+# 
+# ggplot(melt(hsv), aes(x=variable, y=value)) +
+#   geom_boxplot(aes(fill=variable)) +
+#   ylim(0, 255) +
+#   xlab('H: [0,179], S [0,255], V: [0,255]')+
+#   ylab('')
 #OpenCV: 
 
 ```

@@ -200,21 +200,33 @@ femaleFieldRanksN<-as.numeric(factor(names(femaleFieldRanks), levels=names(field
 cor(cbind(fieldRanksN, maleFieldRanksN, femaleFieldRanksN), method="kendall", use="pairwise") 
 
 # female vs male
-cor.test(as.numeric(factor(names(maleFieldRanks), levels=names(maleFieldRanks))),
-         as.numeric(factor(names(maleFieldRanks), levels=names(fieldRanks))), method="kendall")
-
+cor.test(maleFieldRanksN,
+         femaleFieldRanksN, method="kendall")
+# female vs all
+cor.test(femaleFieldRanksN,
+         fieldRanksN, method="kendall")
+# male vs all
+cor.test(maleFieldRanksN,
+         fieldRanksN, method="kendall")
 
 dat <- data.frame(
-    group = rep(c("male", "female"), each=length(maleFieldRanks)),
-    x = setNames(c(maleFieldRanksN, femaleFieldRanksN),c(names(maleFieldRanks), names(femaleFieldRanks))),
-    y = c(maleFieldRanks, -femaleFieldRanks)
+    group = rep(c("male", "female"), each=length(maleFieldRanks[1:30])),
+    x = c(maleFieldRanksN[1:30], femaleFieldRanksN[1:30]),
+    y = c(maleFieldRanks[1:30], -femaleFieldRanks[1:30])
     
 )
-ggplot(dat, aes(x=x, y=y, fill=group)) + 
-  geom_bar(stat="identity", position="identity") 
-  labs(list(x="Fields", y="Proportion", fill = "Gender"))
 
-cbind(names(maleFieldRanks[1:20]), names(femaleFieldRanks[1:20]))
+dat$x<-factor(dat$x)
+dat$xlabels<-c(names(maleFieldRanks[1:30]), names(femaleFieldRanks[1:30]))
+
+
+ggplot(dat, aes(x=x, y=y, fill=group, xlabels=xlabels)) + 
+  geom_bar(stat="identity", position="identity") +
+  # guides(xlabels=guide_legend(ncol=3)) +
+  labs(list(x="Fields", y="Proportion", fill = "Gender"))
+  
+
+cbind(names(maleFieldRanks[1:20]), round(as.numeric(maleFieldRanks[1:20]),  digits=4)*100, names(femaleFieldRanks[1:20]),  round(as.numeric(femaleFieldRanks[1:20]),  digits=4)*100)
 
 cbind(sum(maleFieldRanks[1:5]), sum(femaleFieldRanks[1:5]))
 
@@ -273,12 +285,14 @@ rm(temp)
 rm(jaccdist)
 rm(topic_mat)
 
+ggsave('topic_clusters.pdf', width=4, height=5) # for publication
 ```
 *Entropy of users*
 ```{r}
 
 # calculate entropy (diversity) of users
-
+setkey(links, user_id)
+setkey(projects, design_id)
 users$diversity<-sapply(users$user_id, function(uid){
   # uid<-users$user_id[idx]
   # cat(idx, ': ', uid, '\n')
@@ -321,6 +335,7 @@ filtered<-users %>%
   filter(!is.na(diversity)) %>% 
   arrange(project_counts)
 
+summary(users$diversity)
 
 filtered$group<-cut(seq_along(filtered$project_counts),3, labels=c('a', 'b', 'c'))
 
@@ -332,15 +347,17 @@ by(filtered$project_counts, filtered$group, summary)
 
 xrange<-rbind(as.vector(by(filtered$project_counts, filtered$group, min)),
   as.vector(by(filtered$project_counts, filtered$group, max)))
-levels(filtered$group)<-c(paste('[',xrange[1,1], ',', xrange[2,1], ']'),
-                          paste('[',xrange[1,2], ',', xrange[2,2], ']'),
-                          paste('[',xrange[1,3], ',', xrange[2,3], ']'))
+levels(filtered$group)<-c(paste0('[',xrange[1,1], ',', xrange[2,1], ']'),
+                          paste0('[',xrange[1,2], ',', xrange[2,2], ']'),
+                          paste0('[',xrange[1,3], ',', xrange[2,3], ']'))
 
 ggplot(filtered, aes(factor(group), diversity)) +
   geom_boxplot(aes(fill=factor(group))) +
   ylim(0, log(68)) +
   xlab('Groups based on number of projects')+
   ylab('Diversity')
+
+ggsave('diversity.pdf', width=4, height=3) # for publication
 
 # t-tests by project count group
 pairwise.t.test(filtered$diversity, filtered$group)
@@ -349,7 +366,7 @@ group2<-subset(filtered, group==levels(filtered$group)[2])
 group3<-subset(filtered, group==levels(filtered$group)[3])
 
 cohen.d(group2$diversity, group1$diversity) # effect sizes
-cohen.d(group2$diversity, group3$diversity)
+cohen.d(group3$diversity, group2$diversity)
 
 # specialist among generalists
 specialist<-group3[group3$diversity<1.0 & group3$project_counts>1000,]
@@ -363,7 +380,7 @@ ranks<-ranks/sum(ranks)
 ranks[1:10]
 
 # generalist among generalists
-generalist<-group3[group3$diversity>2.0 & group3$project_counts>620,]
+generalist<-group3[group3$diversity>2.5& group3$project_counts>600]
 nrow(generalist)
 user_links<-links[links$user_id==generalist$user_id[1] & links$type=='create',]
 user_projects<-projects[projects$design_id%in%user_links$design_id,]
@@ -371,16 +388,22 @@ ranks<-calcTopicRanks(user_projects$fields)
 ranks<-ranks[which(names(ranks)!='no_category')]
 ranks<-ranks[which(names(ranks)!='others')]
 ranks<-ranks/sum(ranks)
-ranks[1:10]
-
+ranks
+generalist$project_counts
+generalist$diversity
+ranks[1:6]
+sum(ranks[1:6])
+sum(ranks>0)
 
 # by gender by project count group
+by(filtered$diversity, filtered$gender, summary)
+
 pairwise.t.test(filtered$diversity, filtered$gender)
 cohen.d(filtered$diversity, filtered$gender)
 
 pairwise.t.test(group1$diversity, group1$gender)
 pairwise.t.test(group2$diversity, group2$gender)
-pairwise.t.test(group3$diversity, group3$gender)
+pairwise.t.test(group3$diversity, group2$gender)
 
 cohen.d(group1$diversity, group1$gender)
 cohen.d(group2$diversity, group2$gender)
@@ -431,18 +454,46 @@ filtered<-users %>%
   filter(!is.na(diversity)) %>% 
   arrange(diversity)
 
-filtered$group<-cut(seq_along(filtered$diversity),3, labels=c('a', 'b', 'c'))
+describe(filtered$homophily)
+
+# five groups
+filtered$group<-cut(seq_along(filtered$diversity),5, labels=c('a', 'b', 'c', 'd', 'e'))
 
 xrange<-rbind(as.vector(by(filtered$diversity, filtered$group, min)),
   as.vector(by(filtered$diversity, filtered$group, max)))
-levels(filtered$group)<-c(paste('[',round(xrange[1,1],2), ',', round(xrange[2,1],2), ']'),
-                          paste('[',round(xrange[1,2],2), ',', round(xrange[2,2],2), ']'),
-                          paste('[',round(xrange[1,3],2), ',', round(xrange[2,3],2), ']'))
-summary(filtered$homophily)
+
+levels(filtered$group)<-c(paste0('[',round(xrange[1,1],2), ',', round(xrange[2,1],2), ']'),
+                          paste0('[',round(xrange[1,2],2), ',', round(xrange[2,2],2), ']'),
+                          paste0('[',round(xrange[1,3],2), ',', round(xrange[2,3],2), ']'),
+                          paste0('[',round(xrange[1,4],2), ',', round(xrange[2,4],2), ']'),
+                          paste0('[',round(xrange[1,5],2), ',', round(xrange[2,5],2), ']'))
+
 ggplot(filtered, aes(factor(group), homophily)) +
   geom_boxplot(aes(fill=factor(group))) +
   xlab('Groups based on diversity')+
   ylab('Homophily')
+
+# pairwise t-test by diversity group
+pairwise.t.test(filtered$homophily, filtered$group)
+
+# three groups
+filtered$group<-cut(seq_along(filtered$diversity),3, labels=c('a', 'b', 'c'))
+
+xrange<-rbind(as.vector(by(filtered$diversity, filtered$group, min)),
+  as.vector(by(filtered$diversity, filtered$group, max)))
+
+levels(filtered$group)<-c(paste0('[',round(xrange[1,1],2), ',', round(xrange[2,1],2), ']'),
+                          paste0('[',round(xrange[1,2],2), ',', round(xrange[2,2],2), ']'),
+                          paste0('[',round(xrange[1,3],2), ',', round(xrange[2,3],2), ']'))
+
+ggplot(filtered, aes(factor(group), homophily)) +
+  geom_boxplot(aes(fill=factor(group))) +
+  xlab('Groups based on diversity')+
+  ylab('Homophily')
+
+ggsave('homophily.pdf', width=4, height=2.5) # for publication
+
+
 
 # pairwise t-test by diversity group
 pairwise.t.test(filtered$homophily, filtered$group)
@@ -451,9 +502,11 @@ group2<-subset(filtered, group==levels(filtered$group)[2])
 group3<-subset(filtered, group==levels(filtered$group)[3])
 
 cohen.d(group2$homophily, group1$homophily) # effect sizes
-cohen.d(group2$homophily, group3$homophily)
+cohen.d(group3$homophily, group2$homophily)
 
 # homophily by gender 
+by(filtered$homophily, filtered$gender, summary)
+
 pairwise.t.test(filtered$homophily, filtered$gender)
 cohen.d(filtered$homophily, filtered$gender)
 
@@ -470,6 +523,12 @@ pairwise.t.test(group3$homophily, group3$gender)
 cohen.d(group1$homophily, group1$gender)
 cohen.d(group2$homophily, group2$gender)
 cohen.d(group3$homophily, group3$gender)
+
+ggplot(filtered, aes(factor(gender), homophily)) +
+  geom_boxplot(aes(fill=factor(gender))) +
+  facet_grid(. ~ group)+
+  xlab('Groups based on diversity')+
+  ylab('Homophily')
 
 
 ```
