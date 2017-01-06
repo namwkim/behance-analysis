@@ -46,7 +46,7 @@ cfs$fields$abbr_name<-sapply( cfs$fields[2], function(x){
   tolower(gsub(" ", "_", x))
 });
 systemFields<-as.vector(cfs$fields$abbr_name)
-rm(cfs)
+
 
 calcTopicRanks<-function(fields){
   userFields<-vector('integer', length(systemFields)+2)
@@ -138,6 +138,11 @@ rm(userFieldRanksN)
 rm(allTopics)
 
 ```
+*Compare with popular topics*
+```{r}
+cbind(cfs$popular, fieldRanks[1:12])
+```
+
 *Compare with user focus data*
 ```{r}
 # allTopics<-calcTopicRanks(subset(users, gender=='male')$fields)

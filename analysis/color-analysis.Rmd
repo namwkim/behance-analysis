@@ -121,17 +121,16 @@ ggplot(melted_colors, aes(x=x, fill=variable, y=log(value+1))) +
 
 describe(log(colors+1))
 
-ggsave('colors.pdf', width=6, height=4) # for publication
 # hsv 
 hsv<-subset(measures, select=c(names(measures)%in%c('hue', 'saturation', 'value')) )
 
 summary(hsv)
 # 
-# ggplot(melt(hsv), aes(x=variable, y=value)) +
-#   geom_boxplot(aes(fill=variable)) +
-#   ylim(0, 255) +
-#   xlab('H: [0,179], S [0,255], V: [0,255]')+
-#   ylab('')
+ggplot(melt(hsv), aes(x=variable, y=value)) +
+  geom_boxplot(aes(fill=variable)) +
+  ylim(0, 255) +
+  xlab('H: [0,179], S [0,255], V: [0,255]')+
+  ylab('')
 #OpenCV: 
 
 ```
@@ -196,16 +195,17 @@ ggplot(melt(temp), aes(x=Var1, y=value, group=Var2, colour=Var2))+
 ```{r}
 regdata<-subset(measures, select=c(!names(measures)%in%c('hue')) )
 
-temp<-regdata[sample(1:nrow(regdata), 300000),]
+# temp<-regdata[sample(1:nrow(regdata), 300000),]
 
 fitnb <- glm.nb(appreciations ~ ., data = regdata, maxit = 100, trace=TRUE)
 summary(fitnb)
-pchisq(fitnb$deviance, df=fitnb$df.residual, lower.tail=FALSE)
-
+# pchisq(fitnb$deviance, df=fitnb$df.residual, lower.tail=FALSE)
+1-pchisq(fitnb$null.deviance - fitnb$deviance, df=(fitnb$df.null - fitnb$df.residual))
 ```
 ```{r}
 beta_std <- lm.beta(fitnb)
-sort(beta_std, decreasing = TRUE)
+rel_beta_std<-beta_std/sqrt(sum(beta_std^2))
+rel_beta_std[order(abs(rel_beta_std),decreasing = TRUE)]
 
 ```
 ```{r}
