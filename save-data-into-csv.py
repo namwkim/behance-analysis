@@ -9,9 +9,12 @@ import random
 import time
 import urllib2
 
+auth = csv.reader(open("./auth.txt", 'rb')).next();
+
 # db connection
-localClient = pymongo.MongoClient('localhost', 27017)
+localClient = pymongo.MongoClient('mongodb://'+auth[0]+':'+auth[1]+'@localhost:27017/')
 db = localClient.behance
+# db.authenticate(auth[0],auth[1], source='admin')
 
 dbusers = db.users
 dbprojects = db.projects
@@ -71,13 +74,13 @@ print '#of create-links:', len(filter(lambda x: x[2] == 'create', links))
 # print 'save into csv files'
 userwriter = csv.writer(open("./data/users-" + str(percent) + ".csv", 'wb'));
 userwriter.writerow(['user_id', 'fields', 'followers', 'following', 'username',
-    'gender', 'country', 'comments', 'project_counts', 'project_views',
+    'gender', 'state', 'country', 'comments', 'project_counts', 'project_views',
     'project_appreciations', 'project_comments', 'created_on'])
 for user in users:
     record = [user['id'], '|'.join(user['fields']),
         user['stats']['followers'], user['stats'][
             'following'], user['username'],
-        user["gender"], user["country"], user["stats"]["comments"],
+        user["gender"], user["state"], user["country"], user["stats"]["comments"],
         user['project_counts'], user["stats"][
             "views"], user["stats"]["appreciations"],
         user['project_comments'], user["created_on"]]
