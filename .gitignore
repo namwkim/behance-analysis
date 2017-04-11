@@ -5,7 +5,7 @@ key.txt
 .Rhistory
 .DS_Store
 data
-.zip
+*.zip
 .nb.html
 *.csv
 .pyc
