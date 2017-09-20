@@ -1,4 +1,5 @@
 ## Behance Data Analysis
+- Contact: namwkim85@gmail.com
 ------
 #### Requirement
 - python, pip, mongodb
@@ -26,5 +27,8 @@ pip install -r requirements.txt
   - Convert the sample user data saved in MongoDb into a csv file.
 
 #### Data Analysis Script
-- [filename.R]
+- [`analysis`](https://github.com/namwkim/behance-analysis/tree/master/analysis) 
+
+#### Extracting Image Features
+- [`img-proc`](https://github.com/namwkim/behance-analysis/tree/master/img-proc) written in Java. The original code is here [link](http://iis.seas.harvard.edu/resources/aesthetics-chi13/)
 
