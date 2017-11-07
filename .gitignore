@@ -4,10 +4,8 @@ key.txt
 .RData
 .Rhistory
 .DS_Store
-data
 *.zip
 .nb.html
-*.csv
 .pyc
 *.pdf
 auth.txt
