@@ -1,5 +1,6 @@
 ## Behance Data Analysis
 - Contact: namwkim85@gmail.com
+- Full data used for analysis is here: https://bitbucket.org/namwkim85/behance-data
 ------
 #### Requirement
 - python, pip, mongodb
